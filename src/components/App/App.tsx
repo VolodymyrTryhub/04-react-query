@@ -1,60 +1,41 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import toast, { Toaster } from "react-hot-toast";
+
 import { fetchMovies } from "../../services/movieService";
-import { Toaster } from "react-hot-toast";
-import toast from "react-hot-toast";
+import type { Movie } from "../../types/movie";
 
 import SearchBar from "../SearchBar/SearchBar";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieGrid from "../MovieGrid/MovieGrid";
-import MovieModal from "../MovieModal/MovieModal";
-
-import type { Movie } from "../../types/movie";
 
 function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = useQuery<Movie[]>({
+    queryKey: ["movies", query],
+    queryFn: () => fetchMovies(query),
+    enabled: !!query,
+  });
 
   const handleSearch = (newQuery: string) => {
-    setMovies([]);
     setQuery(newQuery);
   };
 
-  useEffect(() => {
-    if (!query) return;
-
-    const getMovies = async () => {
-      try {
-        setLoading(true);
-        setError(false);
-
-        const data = await fetchMovies(query);
-
-        if (data.length === 0) {
-          toast.error("No movies found for your request.");
-        }
-
-        setMovies(data);
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getMovies();
-  }, [query]);
-
   const handleSelectMovie = (movie: Movie) => {
-    setSelectedMovie(movie);
+    console.log(movie);
   };
 
-  const handleCloseModal = () => {
-    setSelectedMovie(null);
-  };
+  useEffect(() => {
+    if (!isLoading && query && data.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [data, isLoading, query]);
 
   return (
     <div>
@@ -62,15 +43,12 @@ function App() {
 
       <SearchBar onSubmit={handleSearch} />
 
-      {loading && <Loader />}
-      {!loading && error && <ErrorMessage />}
+      {isLoading && <Loader />}
 
-      {movies.length > 0 && (
-        <MovieGrid movies={movies} onSelect={handleSelectMovie} />
-      )}
+      {isError && <ErrorMessage />}
 
-      {selectedMovie && (
-        <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
+      {data.length > 0 && (
+        <MovieGrid movies={data} onSelect={handleSelectMovie} />
       )}
     </div>
   );
