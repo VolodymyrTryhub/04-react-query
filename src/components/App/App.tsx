@@ -23,6 +23,8 @@ function App() {
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: !!query,
+
+    placeholderData: (prevData) => prevData,
   });
 
   const movies: Movie[] = data?.results ?? [];
@@ -66,9 +68,7 @@ function App() {
               pageCount={totalPages}
               pageRangeDisplayed={5}
               marginPagesDisplayed={1}
-              onPageChange={({ selected }: { selected: number }) =>
-                setPage(selected + 1)
-              }
+              onPageChange={({ selected }) => setPage(selected + 1)}
               forcePage={page - 1}
               containerClassName={css.pagination}
               activeClassName={css.active}
