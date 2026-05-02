@@ -11,13 +11,10 @@ interface MovieModalProps {
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 
-const modalRoot = document.getElementById("modal-root")!;
-
-if (!modalRoot) {
-  throw new Error("Modal root not found");
-}
-
 function MovieModal({ movie, onClose }: MovieModalProps) {
+  const modalRoot = document.getElementById("modal-root");
+
+  // ✅ Хук ВСЕГДА зверху (це критично)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -34,11 +31,23 @@ function MovieModal({ movie, onClose }: MovieModalProps) {
     };
   }, [onClose]);
 
+  // ✅ Після хуків — можна робити перевірки
+  if (!modalRoot) return null;
+
   const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
+
+  const rating =
+    typeof movie.vote_average === "number"
+      ? movie.vote_average.toFixed(1)
+      : "N/A";
+
+  const imageUrl = movie.backdrop_path
+    ? `${IMAGE_BASE_URL}${movie.backdrop_path}`
+    : "https://via.placeholder.com/800x400?text=No+Image";
 
   return createPortal(
     <div
@@ -58,11 +67,7 @@ function MovieModal({ movie, onClose }: MovieModalProps) {
 
         <img
           className={styles.image}
-          src={
-            movie.backdrop_path
-              ? `${IMAGE_BASE_URL}${movie.backdrop_path}`
-              : "https://via.placeholder.com/800x400?text=No+Image"
-          }
+          src={imageUrl}
           alt={`Backdrop of ${movie.title}`}
         />
 
@@ -76,7 +81,7 @@ function MovieModal({ movie, onClose }: MovieModalProps) {
           </p>
 
           <p>
-            <strong>Rating:</strong> {movie.vote_average.toFixed(1)}/10
+            <strong>Rating:</strong> {rating}/10
           </p>
         </div>
       </div>

@@ -3,24 +3,38 @@ import type { Movie } from "../types/movie";
 
 const BASE_URL = "https://api.themoviedb.org/3";
 
-const TOKEN = import.meta.env.VITE_TMDB_TOKEN;
+const TOKEN = import.meta.env.VITE_TMDB_TOKEN as string;
 
-interface FetchMoviesResponse {
+export interface MoviesResponse {
   results: Movie[];
+  total_pages: number;
 }
 
-export const fetchMovies = async (query: string): Promise<Movie[]> => {
-  const response = await axios.get<FetchMoviesResponse>(
-    `${BASE_URL}/search/movie`,
-    {
-      params: {
-        query,
-      },
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-      },
-    },
-  );
+export const fetchMovies = async (
+  query: string,
+  page: number,
+): Promise<MoviesResponse> => {
+  if (!TOKEN) {
+    console.error("TMDB token is missing");
+    throw new Error("No API token provided");
+  }
 
-  return response.data.results;
+  if (!query) {
+    return {
+      results: [],
+      total_pages: 0,
+    };
+  }
+
+  const response = await axios.get<MoviesResponse>(`${BASE_URL}/search/movie`, {
+    params: {
+      query,
+      page,
+    },
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+    },
+  });
+
+  return response.data;
 };
